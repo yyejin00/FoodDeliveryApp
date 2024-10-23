@@ -65,6 +65,7 @@ function SignUp({navigation}: SignUpScreenProps) {
     console.log(email, name, password);
     try {
       setLoading(true);
+      console.log(Config.API_URL);
       const response = await axios.post(`${Config.API_URL}/user`, {
         email,
         name,
@@ -72,7 +73,7 @@ function SignUp({navigation}: SignUpScreenProps) {
       });
       console.log(response.data);
       Alert.alert('알림', '회원가입 되었습니다.');
-      navigation.navigate('SignIn');
+      navigation.navigate('SignIn'); //로그인 창으로 바로 이동
     } catch (error) {
       const errorResponse = (error as AxiosError).response;
       console.error(errorResponse);

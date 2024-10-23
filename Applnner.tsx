@@ -30,7 +30,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 function AppInner() {
   //리덕스에 전역상태의 것들을 관리한다. isLoggedIn을통해서 email(slices에 있는 전역변수)
   const isLoggedIn = useSelector((state: RootState) => !!state.user.email);
-  console.log('isLoggedIn', isLoggedIn);
+  //console.log('isLoggedIn', isLoggedIn);
 
   return (
     <NavigationContainer>
