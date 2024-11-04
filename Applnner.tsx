@@ -11,6 +11,13 @@ import {useSelector} from 'react-redux';
 import {RootState} from './src/store/reducer';
 import useSocket from './src/hooks/useSocket';
 import {useEffect} from 'react';
+import {useAppDispatch} from './src/store';
+import axios, {AxiosError} from 'axios';
+import Config from 'react-native-config';
+import {Alert} from 'react-native';
+import userSlice from './src/slices/user';
+import EncryptedStorage from 'react-native-encrypted-storage';
+import orderSlice from './src/slices/order';
 
 export type LoggedInParamList = {
   Orders: undefined;
@@ -28,26 +35,63 @@ const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 function AppInner() {
-  //리덕스에 전역상태의 것들을 관리한다. isLoggedIn을통해서 email(slices에 있는 전역변수)
+  const dispatch = useAppDispatch();
   const isLoggedIn = useSelector((state: RootState) => !!state.user.email);
-  //console.log('isLoggedIn', isLoggedIn);
   const [socket, disconnect] = useSocket();
 
   useEffect(() => {
-    const helloCallback = (data: any) => {
+    const getTokenAndRefresh = async () => {
+      try {
+        const token = await EncryptedStorage.getItem('refreshToken');
+        if (!token) {
+          //토큰 없을 시 로그인하라고 함
+          return;
+        }
+        const response = await axios.post(
+          `${Config.API_URL}/refreshToken`,
+          {},
+          {
+            headers: {
+              authorization: `Bearer ${token}`,
+            },
+          },
+        );
+        dispatch(
+          userSlice.actions.setUser({
+            name: response.data.data.name,
+            email: response.data.data.email,
+            accessToken: response.data.data.accessToken,
+          }),
+        );
+      } catch (error) {
+        console.error(error);
+
+        if ((error as AxiosError).response?.data.code === 'expired') {
+          Alert.alert('알림', '다시 로그인 해주세요.');
+        }
+      } finally {
+        //TODO : 스플래시 스크린 없애기
+      }
+    };
+    getTokenAndRefresh();
+  }, [dispatch]);
+  useEffect(() => {
+    const Callback = (data: any) => {
       console.log(data);
+
+      dispatch(orderSlice.actions.addOrder(data));
     };
     if (socket && isLoggedIn) {
       console.log(socket);
-      socket.emit('login', 'hello');
-      socket.on('hello', helloCallback);
+      socket.emit('acceptOrder', 'hello');
+      socket.on('order', Callback);
     }
     return () => {
       if (socket) {
-        socket.off('hello', helloCallback);
+        socket.off('hello', Callback);
       }
     };
-  }, [isLoggedIn, socket]);
+  }, [dispatch, isLoggedIn, socket]);
 
   useEffect(() => {
     if (!isLoggedIn) {
