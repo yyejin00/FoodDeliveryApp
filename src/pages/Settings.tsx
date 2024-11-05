@@ -60,7 +60,7 @@ function Settings() {
         <Text style={styles.moneyText}>
           {name}님의 수익금{''}
           <Text style={{fontWeight: 'bold'}}>
-            {money.toString().replace(/\B(?={\d{3})+(?!\d))/g, ',')}
+            {money.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
           </Text>
           원
         </Text>
